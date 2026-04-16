@@ -1,0 +1,10 @@
+{
+    "label": "Delete Backtests",
+    "type": "shell",
+    "command": "rm",
+    "args": [
+        "-rf",
+        "${workspaceFolder}/backtests/*"
+    ],
+    "problemMatcher": []
+}

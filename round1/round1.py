@@ -210,6 +210,11 @@ class AbstractTrader:
         except: pass
         return best_bid, best_ask
     
+    def get_spread(self):
+        spread = None
+        try: spread = self.best_ask-self.best_bid
+        except: pass
+        return spread
 
 
     def get_walls(self):
@@ -289,6 +294,16 @@ class AbstractTrader:
         
         self.bid(bid_price, self.max_allowed_buy_volume)
         self.ask(ask_price, self.max_allowed_sell_volume)
+        
+    def buy_and_hold(self):
+        '''
+        This strategy involves buying as much as possible and holding.
+        '''
+        
+        if self.ask_wall is not None and self.initial_position < self.position_limit:
+            for sp, sv in self.market_sell_orders.items():
+                self.bid(sp, sv) # buy all sell orders
+        
     
     
     def get_orders(self):
@@ -307,47 +322,8 @@ class OsmiumTrader(AbstractTrader):
     def get_orders(self):
         if self.wall_mid is not None:
             fair_price = self.wall_mid
-
-            # MARKET TAKING
-            for sp, sv in self.market_sell_orders.items():
-                if sp <= fair_price - 1:
-                    self.bid(sp, sv)
-                elif sp <= fair_price and self.initial_position < 0:
-                    volume = min(sv, abs(self.initial_position))
-                    self.bid(sp, volume)
-                    
-            for bp, bv in self.market_buy_orders.items():
-                if bp >= fair_price + 1:
-                    self.ask(bp, bv)
-                elif bp >= fair_price and self.initial_position > 0:
-                    volume = min(bv, self.initial_position)
-                    self.ask(bp, volume)
-            
-            # MARKET MAKING
-            # Base Cases
-            bid_price = self.bid_wall + 1
-            ask_price = self.ask_wall - 1
-            
-            for bp, bv in self.market_buy_orders.items():
-                overbidding_price = bp + 1 # we beat them by 1
-                if bv > 1 and overbidding_price < fair_price:
-                    bid_price = max(bid_price, overbidding_price)
-                    break
-                elif bp < fair_price: # we bid if we are still under
-                    bid_price = max(bid_price, bp)
-                    break
-            
-            for sp, sv in self.market_sell_orders.items():
-                underbidding_price = sp - 1 # we beat them by 1
-                if sv > 1 and underbidding_price > fair_price:
-                    ask_price = min(ask_price, underbidding_price)
-                    break
-                elif sp > fair_price: # we bid if we are still under
-                    ask_price = min(ask_price, sp)
-                    break
-            
-            self.bid(bid_price, self.max_allowed_buy_volume)
-            self.ask(ask_price, self.max_allowed_sell_volume)
+            self.take_market(fair_price)
+            self.make_market(fair_price)
         
         return {self.name: self.orders}
 
@@ -361,16 +337,48 @@ class PepperTrader(AbstractTrader):
         super().__init__(PEPPER_SYMBOL, state, prints, new_trader_data)
     
     def get_orders(self):
-        # # try to buy as much as possible at beginning
+        SLOPE = 0.001 # increase per timestamp unit
+        #self.buy_and_hold()
         
-        if self.initial_position < self.position_limit and self.best_ask is not None:
-            self.bid(self.best_ask, self.max_allowed_buy_volume)
-
-
+        # 1) Aggressively Buy at the Beginning
+        if self.ask_wall is not None and self.initial_position < self.position_limit:
+            for sp, sv in self.market_sell_orders.items():
+                self.bid(sp, sv) # buy all sell orders
+        
+        
+        # # 2) Only sell some if someone will pay much higher than fair value that we can buy back quickly
+        # fair_price = self.get_fair_price()
+        # threshold = 2
+        
+        # for bp, bv in self.market_buy_orders.items():
+        #     if bp >= fair_price + threshold:
+        #         self.ask(bp, bv)
+        #         self.bid(99999,bv)
+        
+    
         return {self.name: self.orders}
+    
+    
+    def get_fair_price(self):
+        fp = None
+        if self.last_traderData:
+            fp = self.last_traderData["fp"] + 0.1
+        elif self.wall_mid is not None:
+            fp = self.wall_mid
+        elif self.best_ask is not None:
+            fp = self.best_ask
+        elif self.best_bid is not None:
+            fp = self.best_bid
+        else:
+            logger.print(["Cannot determine initial fair price."])
+        
+        self.new_trader_data["fp"] = fp
+        
+        return fp
+            
 
 
-
+# RUNNING PNL: 290,137
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
 # Trader Class
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -400,8 +408,9 @@ class Trader:
         
         # Save Final Data
         final_trader_data = {}
-        try: final_trader_data = json.dumps(new_trader_data)
-        except: pass
+        try:
+            final_trader_data = json.dumps(new_trader_data)
+        except: final_trader_data = ''
         
         # Debugging / Backtesting
         print_dict(final_trader_data)

@@ -71,9 +71,11 @@ def order_book_plot(prices, trades, xmin=0, xmax=20000, title="", show_trades=Tr
         for trade in trades.itertuples():
             time = trade.timestamp
             price = trade.price
+            prices_df = prices[prices['timestamp']==time]
             mark = None
             fill_style = 'none'
-            if trade.price < 10000:
+            #print(prices['timestamp'])
+            if trade.price < int(prices_df['mid_price'].iloc[0]):
                 mark = 'v'
             else:
                 mark = '^'
@@ -93,6 +95,7 @@ def order_book_plot(prices, trades, xmin=0, xmax=20000, title="", show_trades=Tr
     ax.set_xlabel('Timestamp')
     ax.set_ylabel('Price')
     plt.xlim(xmin, xmax)
+
     plt.ylim(prices.iloc[int(xmin/100):int(xmax/100)]['mid_price'].min()-5, prices.iloc[int(xmin/100):int(xmax/100)]['mid_price'].max()+5)
     ax.legend()
     plt.show()
