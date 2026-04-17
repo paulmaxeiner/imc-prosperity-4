@@ -297,7 +297,7 @@ class AbstractTrader:
         
     def buy_and_hold(self):
         '''
-        This strategy involves buying as much as possible and holding.
+        This strategy involves clearing the asks / buying as much as possible and holding.
         '''
         
         if self.ask_wall is not None and self.initial_position < self.position_limit:
@@ -335,25 +335,32 @@ class OsmiumTrader(AbstractTrader):
 class PepperTrader(AbstractTrader):
     def __init__(self, state, prints, new_trader_data):
         super().__init__(PEPPER_SYMBOL, state, prints, new_trader_data)
+        
+        self.fair_price = self.get_fair_price()
+        
     
     def get_orders(self):
         SLOPE = 0.001 # increase per timestamp unit
         #self.buy_and_hold()
+        # Here, the strategy lies in the optimal way to get maximized position at the beginning
         
         # 1) Aggressively Buy at the Beginning
-        if self.ask_wall is not None and self.initial_position < self.position_limit:
+        
+        MAX_PREMIUM = 7 # the most above our fair value we will pay to get a fill now
+        #if self.ask_wall is not None and self.initial_position < self.position_limit:
+        if self.max_allowed_buy_volume > 0 and self.fair_price is not None and self.ask_wall is not None:
             for sp, sv in self.market_sell_orders.items():
-                self.bid(sp, sv) # buy all sell orders
+                if sp < self.fair_price + MAX_PREMIUM:
+                    self.bid(sp, sv) # Buy
+    
         
-        
-        # # 2) Only sell some if someone will pay much higher than fair value that we can buy back quickly
-        # fair_price = self.get_fair_price()
-        # threshold = 2
-        
-        # for bp, bv in self.market_buy_orders.items():
-        #     if bp >= fair_price + threshold:
-        #         self.ask(bp, bv)
-        #         self.bid(99999,bv)
+        # if self.max_allowed_buy_volume > 0:
+        #     if self.best_ask is not None:
+        #         self.bid(self.best_ask, self.max_allowed_buy_volume)
+        #     if self.best_bid is not None:
+        #         self.bid(self.best_bid + 1, self.max_allowed_buy_volume)
+        #     else:
+        #         self.bid(self.get_fair_price(), self.max_allowed_buy_volume)
         
     
         return {self.name: self.orders}
@@ -379,6 +386,8 @@ class PepperTrader(AbstractTrader):
 
 
 # RUNNING PNL: 290,137
+# NEW: 290,385
+# 290,509 (only take below FV)
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
 # Trader Class
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
