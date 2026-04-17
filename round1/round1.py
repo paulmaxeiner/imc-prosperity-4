@@ -151,6 +151,13 @@ POSITION_LIMITS = {
     PEPPER_SYMBOL: 80
 }
 
+# try:
+#     import prosperity4bt.runner as bt_runner
+
+#     bt_runner.LIMITS.update(POSITION_LIMITS)
+# except Exception:
+#     pass
+
 
 
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
