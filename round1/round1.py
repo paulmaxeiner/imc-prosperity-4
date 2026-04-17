@@ -222,6 +222,17 @@ class AbstractTrader:
         try: spread = self.best_ask-self.best_bid
         except: pass
         return spread
+    
+    def update_last_traded_price(self):
+        if self.name in self.state.market_trades and len(self.state.market_trades[self.name])>0:
+            p = self.state.market_trades[self.name][0].price # update so it shows max/min
+            self.new_trader_data[self.name+"_ltp"] = p
+    
+    def get_last_traded_price(self):
+        ltp = None
+        try: ltp = self.last_traderData[self.name + "_ltp"]
+        except: pass
+        return ltp
 
 
     def get_walls(self):
@@ -347,14 +358,12 @@ class PepperTrader(AbstractTrader):
         
     
     def get_orders(self):
-        SLOPE = 0.001 # increase per timestamp unit
-        #self.buy_and_hold()
         # Here, the strategy lies in the optimal way to get maximized position at the beginning
         
         # 1) Aggressively Buy at the Beginning
         
-        MAX_PREMIUM = 7 # the most above our fair value we will pay to get a fill now
-        #if self.ask_wall is not None and self.initial_position < self.position_limit:
+        MAX_PREMIUM = 7 # the most above our fair value we will pay to get a fill now (about 1/2 of the spread)
+            # This is key to an optimal initial fill, reducing our initial drawdown and maximizing PnL
         if self.max_allowed_buy_volume > 0 and self.fair_price is not None and self.ask_wall is not None:
             for sp, sv in self.market_sell_orders.items():
                 if sp < self.fair_price + MAX_PREMIUM:
@@ -391,29 +400,12 @@ class PepperTrader(AbstractTrader):
         self.new_trader_data["start_price"] = start_price
         self.new_trader_data["fp"] = fp
         return fp
-        
-    # def get_fair_price(self):
-    #     fp = None
-    #     if self.last_traderData:
-    #         fp = self.last_traderData["fp"] + 0.1
-    #     elif self.wall_mid is not None:
-    #         fp = self.wall_mid
-    #     elif self.best_ask is not None:
-    #         fp = self.best_ask
-    #     elif self.best_bid is not None:
-    #         fp = self.best_bid
-    #     else:
-    #         logger.print(["Cannot determine initial fair price."])
-        
-    #     self.new_trader_data["fp"] = fp
-        
-    #     return fp
             
 
 
 # RUNNING PNL: 290,137
 # NEW: 290,385
-# 290,509 (only take below FV)
+# BETTER: 290,509 (only take below FV + max_premium)
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
 # Trader Class
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -440,6 +432,8 @@ class Trader:
                 trader = product_trader(state, prints, new_trader_data)
                 orders = trader.get_orders()
                 result.update(orders)
+        
+        
         
         # Save Final Data
         final_trader_data = {}

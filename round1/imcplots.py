@@ -32,7 +32,9 @@ COLORS = {
     "ask_price_1": "#FF937E",
     "bid_price_1": "#C1E59F",
     "bid_price_2": "#A3D78A",
-    "bid_price_3": "#346739"
+    "bid_price_3": "#346739",
+    "mid_price": "#0011FF",
+    "wall_mid": "#FF00FF"
 }
 
 def get_wall_mid(prices):
