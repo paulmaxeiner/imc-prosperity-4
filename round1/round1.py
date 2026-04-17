@@ -173,6 +173,7 @@ class AbstractTrader:
         
         self.market_buy_orders, self.market_sell_orders = self.get_order_depth()
         self.best_bid, self.best_ask = self.get_best_bid_ask()
+        self.mid_price = self.get_mid_price()
         self.bid_wall, self.wall_mid, self.ask_wall = self.get_walls()
         
         self.max_allowed_buy_volume, self.max_allowed_sell_volume = self.get_max_allowed_volume()
@@ -209,6 +210,12 @@ class AbstractTrader:
                 best_ask = min(self.market_sell_orders.keys())
         except: pass
         return best_bid, best_ask
+    
+    def get_mid_price(self):
+        mid = None
+        try: mid = (self.best_ask+self.best_bid)/2
+        except: pass
+        return mid
     
     def get_spread(self):
         spread = None
@@ -351,8 +358,12 @@ class PepperTrader(AbstractTrader):
         if self.max_allowed_buy_volume > 0 and self.fair_price is not None and self.ask_wall is not None:
             for sp, sv in self.market_sell_orders.items():
                 if sp < self.fair_price + MAX_PREMIUM:
-                    self.bid(sp, sv) # Buy
+                    volume = min(sv, self.max_allowed_buy_volume)
+                    self.bid(sp, volume) # Buy
     
+        if self.best_bid is not None:
+            self.bid(self.best_bid +1, self.max_allowed_buy_volume)
+        
         
         # if self.max_allowed_buy_volume > 0:
         #     if self.best_ask is not None:
@@ -367,21 +378,36 @@ class PepperTrader(AbstractTrader):
     
     
     def get_fair_price(self):
-        fp = None
-        if self.last_traderData:
-            fp = self.last_traderData["fp"] + 0.1
-        elif self.wall_mid is not None:
-            fp = self.wall_mid
-        elif self.best_ask is not None:
-            fp = self.best_ask
-        elif self.best_bid is not None:
-            fp = self.best_bid
+        SLOPE = 0.001
+        ts = self.state.timestamp
+        
+        if not self.last_traderData or 'start_price' not in self.last_traderData:
+            start_price = self.wall_mid or self.mid_price or self.best_ask or self.best_bid
+            self.new_trader_data["start_price"] = start_price
         else:
-            logger.print(["Cannot determine initial fair price."])
+            start_price = self.last_traderData["start_price"]
         
+        fp = start_price + 0.001 * ts
+        self.new_trader_data["start_price"] = start_price
         self.new_trader_data["fp"] = fp
-        
         return fp
+        
+    # def get_fair_price(self):
+    #     fp = None
+    #     if self.last_traderData:
+    #         fp = self.last_traderData["fp"] + 0.1
+    #     elif self.wall_mid is not None:
+    #         fp = self.wall_mid
+    #     elif self.best_ask is not None:
+    #         fp = self.best_ask
+    #     elif self.best_bid is not None:
+    #         fp = self.best_bid
+    #     else:
+    #         logger.print(["Cannot determine initial fair price."])
+        
+    #     self.new_trader_data["fp"] = fp
+        
+    #     return fp
             
 
 
