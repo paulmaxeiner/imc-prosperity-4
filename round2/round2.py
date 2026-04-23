@@ -151,14 +151,6 @@ POSITION_LIMITS = {
     PEPPER_SYMBOL: 80
 }
 
-try:
-    import prosperity4bt.runner as bt_runner
-
-    bt_runner.LIMITS.update(POSITION_LIMITS)
-except Exception:
-    pass
-
-
 
 #–––––––––––––––––––––––––––––––––––––––––––––––––––––––
 # Abstract Trader / Base Class
@@ -366,36 +358,17 @@ class PepperTrader(AbstractTrader):
     
     def get_orders(self):
         # Here, the strategy lies in the optimal way to get maximized position at the beginning
-        
         # 1) Aggressively Buy at the Beginning
-        # New: At the last second, our inventory resets, so we should sell to anyone who will buy above mid.
-        if self.state.timestamp > 990000:
-            final_value = self.last_traderData['start_price']+0.001*999900
-            for bp, bv in self.market_buy_orders.items():
-                if bp > final_value:
-                    volume = min(bv, self.max_allowed_sell_volume)
-                    self.ask(bp, volume) # Buy
-        else:                
-            MAX_PREMIUM = 7 # the most above our fair value we will pay to get a fill now (about 1/2 of the spread)
-                # This is key to an optimal initial fill, reducing our initial drawdown and maximizing PnL
-            if self.max_allowed_buy_volume > 0 and self.fair_price is not None and self.ask_wall is not None:
-                for sp, sv in self.market_sell_orders.items():
-                    if sp < self.fair_price + MAX_PREMIUM:
-                        volume = min(sv, self.max_allowed_buy_volume)
-                        self.bid(sp, volume) # Buy
+
+        MAX_PREMIUM = 7 # the most above our fair value we will pay to get a fill now (about 1/2 of the spread)
+            # This is key to an optimal initial fill, reducing our initial drawdown and maximizing PnL
+        if self.max_allowed_buy_volume > 0 and self.fair_price is not None and self.ask_wall is not None:
+            for sp, sv in self.market_sell_orders.items():
+                if sp < self.fair_price + MAX_PREMIUM:
+                    volume = min(sv, self.max_allowed_buy_volume)
+                    self.bid(sp, volume) # Buy
         
-            if self.best_bid is not None:
-                self.bid(self.best_bid +1, self.max_allowed_buy_volume)
-        
-        
-        # if self.max_allowed_buy_volume > 0:
-        #     if self.best_ask is not None:
-        #         self.bid(self.best_ask, self.max_allowed_buy_volume)
-        #     if self.best_bid is not None:
-        #         self.bid(self.best_bid + 1, self.max_allowed_buy_volume)
-        #     else:
-        #         self.bid(self.get_fair_price(), self.max_allowed_buy_volume)
-        
+
     
         return {self.name: self.orders}
     
@@ -426,7 +399,7 @@ class PepperTrader(AbstractTrader):
 class Trader:
     
     def bid(self):
-        return 15
+        return 1 # should hit median
     
     def run(self, state: TradingState):
         
@@ -463,6 +436,4 @@ class Trader:
         print_dict(final_trader_data)
         logger.flush(state, result, conversions, final_trader_data)
         
-        
         return result, conversions, final_trader_data
-    

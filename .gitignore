@@ -177,3 +177,5 @@ pyrightconfig.json
 
 # Backtests
 backtests/
+
+logs/
