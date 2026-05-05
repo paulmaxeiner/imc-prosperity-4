@@ -27,9 +27,7 @@ This challenge involved two products: ASH_COATED_OSMIUM and INTARIAN_PEPPER_ROOT
 **INTARIAN_PEPPER_ROOT**
 
 INTARIAN_PEPPER_ROOT followed a stricly positive linear pattern:
-<div align="center">
-    <img src="assets/pepper_price.png" alt="pepper price" width="750">
-</div>
+![](assets/pepper_price.png)
 Assuming this trend would continue, buying and holding would be far more profitable than trying to scalp as a market maker. I tried to find a way to do market-making while holding >80% of the position limit, but the performance was not improving. I shifted my focus to find a way to optimize the initial purchase to get the best possible price at the beginning of each trading day. I found that buying at a premium of no more than 7 (MAX_PREMIUM) at the beginning of the trading day yielded the best performance per the backtester, rather than arbitrarily taking every ask at t=0.
 
 ---
