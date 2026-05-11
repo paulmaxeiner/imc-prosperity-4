@@ -4,7 +4,7 @@
 
 This repository contains code for my submissions to the [IMC Prosperity 4](https://prosperity.imc.com/game) trading competition, organized by round.
 
-Big thanks to IMC for organizing such a fun competition! I learned a lot about market making, order book structure, asset pricing strategies, and game theory. I look forward to coming back next year!
+Big thanks to IMC for organizing such a fun competition! I learned a lot about market making (and taking), order book structure, asset pricing strategies, and game theory. I look forward to coming back next year!
 
 ### Leaderboard
 
@@ -13,7 +13,8 @@ Big thanks to IMC for organizing such a fun competition! I learned a lot about m
 | 1 | 562 | 735 | 1 | 158 |
 | 2 | 721 | 320 | 375 | 175 |
 | 3 | 543 | 448 | 669 | 167 |
-| 4 |  | ~587 | ~1800 | 98 |
+| 4 | ~740 | ~587 | ~1800 | 98 |
+| 5 | 1274 | 205 | 2991 | 340 |
 
 ## Round 0 (Tutorial Round)
 This challenge involed EMERALDS and TOMATOES. EMERALDS followed a static price of 10000 XIRECS, while TOMATOES was more volatile. I employed a strategy of first market taking any arbitrage prices, then market making to tighten the spread and capture any profitable trades from other bots. The fair price for EMERALDS was set at exactly 10000, while the fair price for TOMATOES was determined by the mid wall price (i.e. the mid of the outermost bid/asks, that stays more constant and reduces volatility).
@@ -53,7 +54,7 @@ Realizing that most participants wouldn't bother with bidding at all, the median
 def bid() -> int:
     return 1
 ```
-While I am not sure what the median ended up being, given I jumped up to 320th place in the algorithmic category, I can say this was not a bad strategy.
+While I am not sure what the median ended up being, or if I even hit the median, given I jumped up to 320th place in the algorithmic category, I can say this was not a bad strategy.
 
 
 ## Round 3
